@@ -1,6 +1,7 @@
 from django.db import transaction
 from db.models import Order, Ticket, User
 from django.db.models import QuerySet
+from django.contrib.auth import get_user_model
 
 
 @transaction.atomic
@@ -9,8 +10,8 @@ def create_order(tickets: list[dict], username: str, date: str | None = None) ->
     order = Order.objects.create(user=user)
 
     if date:
-        order.created_at = date
-        order.save()
+        Order.objects.filter(pk=order.pk).update(created_at=date)
+        order.refresh_from_db()
 
     for t in tickets:
         Ticket.objects.create(
@@ -23,7 +24,7 @@ def create_order(tickets: list[dict], username: str, date: str | None = None) ->
     return order
 
 
-def get_orders(username: str | None = None) -> QuerySet:
+def get_orders(username: str | None = None) -> QuerySet[Order]:
     if username:
         return Order.objects.filter(user__username=username)
     return Order.objects.all()
